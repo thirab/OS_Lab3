@@ -108,13 +108,20 @@ public class MemoryManager {
 			pagesNeeded++;
 		}
 		int pagesAllocated =0;
-		//TODO 
+
 		while(freeList!=null){
 			if(pagesNeeded==pagesAllocated){
 				return 1;
 			}
 			MemoryObject next = freeList.getFollowing();
+			if(pagesNeeded-1>pagesAllocated){
+				freeList.setMem(32);
+			}else{
+				freeList.setMem(mod);
+			}
+			freeList.setPID(pid);
 			addNodeToTaken(freeList);
+			pagesAllocated++;
 			freeList=next;
 			
 		}
@@ -133,10 +140,16 @@ public class MemoryManager {
 			int size = current.getEnd() - current.getStart();
 			if( size >=bytes){
 				if(size >bytes+16){
+					MemoryObject newTaken = new MemoryObject(current.getStart(), current.getStart()+bytes, bytes, pid );
 					//TODO
 					//cut memory save some free
 				}else{
-					//TODO
+					//remove pointers
+					current.removeNodeFromList();
+					current.setMem(bytes);
+					current.setPID(pid);
+					//add this element to the front of the list (addNodeToTaken could be switched to add in sorted manner);
+					addNodeToTaken(current);
 					//move to taken stack
 					
 				}
@@ -156,10 +169,8 @@ public class MemoryManager {
 		
 		while(next!=null){
 			if(next.getID() == pid){
-				MemoryObject previous = next.getPrevious();
-				MemoryObject following = next.getFollowing();
-				previous.setFollowing(following);
-				following.setPrevious(previous);
+				//move pointers from previous to following
+				next.removeNodeFromList();
 				
 				
 				next.resetId();
@@ -168,7 +179,7 @@ public class MemoryManager {
 				//if it does exist remove it from the taken list, add that amount to the free list
 				//in adding if it links (aka shares a boundry with any other memoryObject, add them together. 
 				//create a single mem O (aka change the range of one)
-				following = next;
+				next = next.getFollowing();
 				removed=true;
 				if(!paging){
 					
@@ -225,6 +236,9 @@ public class MemoryManager {
 	
 	// maybe this could become a memory Object function?
 	public void tryCombineNodes(MemoryObject one, MemoryObject two){
+		if(paging){
+			return;
+		}
 		int oneStart = one.getStart();
 		int twoStart = two.getStart();
 		int oneEnd = one.getEnd();

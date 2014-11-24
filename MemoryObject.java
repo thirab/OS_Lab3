@@ -16,6 +16,12 @@ public class MemoryObject {
 	public void setStart(int i){
 		start = i;
 	}
+	public void setMem(int mem){
+		memoryUsed = mem;
+	}
+	public void setPID(int p){
+		pid=p;
+	}
 	public int getMem(){
 		return memoryUsed;
 	}
@@ -48,5 +54,10 @@ public class MemoryObject {
 	}
 	public int getID(){
 		return pid;
+	}
+	
+	public void removeNodeFromList(){
+		previous.setFollowing(following);
+		following.setPrevious(previous);
 	}
 }
