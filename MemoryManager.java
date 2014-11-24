@@ -94,6 +94,7 @@ public class MemoryManager {
 			}
 			return allocateSegmentation(bytes, pid, text_size, data_size, heap_size);
 		}else{
+			failed++;
 			//there is not enough room in memory
 		}
 		
@@ -101,7 +102,13 @@ public class MemoryManager {
 	}
 	
 	public int allocatePaging(int bytes, int pid){
-		
+		int pagesNeeded = bytes / pageSize;
+		int mod = bytes % pageSize;
+		if(mod !=0){
+			pagesNeeded++;
+		}
+		int pagesAllocated =0;
+		//TODO 
 		return 0;
 	}
 	
@@ -111,9 +118,24 @@ public class MemoryManager {
 			//error 
 			return -1;
 		}
-		
-		
-		return 0;
+		MemoryObject current = freeList;
+
+		while(current!=null){
+			int size = current.getEnd() - current.getStart();
+			if( size >=bytes){
+				if(size >bytes+16){
+					//
+					//cut memory save some free
+				}else{
+					//move to taken stack
+					
+				}
+			}
+			
+			current = current.getFollowing();
+		}
+		failed ++;
+		return -1;
 	}
 	public int deallocate(int pid)
 	{ //deallocate memory allocated to this process
@@ -160,7 +182,7 @@ public class MemoryManager {
 		int end = o.getEnd();
 		MemoryObject current = freeList;
 		
-		
+		//TODO should this be sorted in some way? change alg to sort in future?
 		if(current == null){
 			current = o;
 			current.resetId();
@@ -169,24 +191,35 @@ public class MemoryManager {
 		if(next == null){
 			o.resetId();
 			current.setFollowing(o);
+			tryCombineNodes(current,o);
 		}
 		while(next.getFollowing()!=null){
 			next=next.getFollowing();
 		}
 		o.resetId();
 		next.setFollowing(o);
+		tryCombineNodes(next,o);
 		
 		//check to see if anything in free shares a border with next
 	}
 	
-	public void combineNodes(MemoryObject one, MemoryObject two){
+	// maybe this could become a memory Object function?
+	public void tryCombineNodes(MemoryObject one, MemoryObject two){
 		//TODO the combination
 		int oneStart = one.getStart();
 		int twoStart = two.getStart();
-		if(oneStart >twoStart){
+		int oneEnd = one.getEnd();
+		int twoEnd = two.getEnd();
+		if(oneStart-1 == twoEnd){
+			two.setEnd(oneEnd);
+			two.addMem(one.getMem());
+			two.setFollowing(one.getFollowing());
 			
-		}else{
-			
+			//combine ...
+		}else if(twoStart-1 == twoEnd){
+			one.setEnd(twoEnd);
+			one.addMem(two.getMem());
+			one.setFollowing(two.getFollowing());
 		}
 	}
 	

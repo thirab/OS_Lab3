@@ -13,6 +13,18 @@ public class MemoryObject {
 		memoryUsed= mem;
 		pid=id;
 	}
+	public void setStart(int i){
+		start = i;
+	}
+	public int getMem(){
+		return memoryUsed;
+	}
+	public void addMem(int i){
+		memoryUsed += i;
+	}
+	public void setEnd(int i){
+		end = i;
+	}
 	public int getStart(){
 		return start;
 	}
