@@ -43,7 +43,7 @@ public class MemoryManager {
 		if(policy == 1){
 			paging = true;
 			System.out.println("we are using paging");
-			//TODO create pages
+			//create the pages
 			pagingSetup();
 		}else{
 			System.out.println("We are using segmentation");
@@ -109,7 +109,16 @@ public class MemoryManager {
 		}
 		int pagesAllocated =0;
 		//TODO 
-		return 0;
+		while(freeList!=null){
+			if(pagesNeeded==pagesAllocated){
+				return 1;
+			}
+			MemoryObject next = freeList.getFollowing();
+			addNodeToTaken(freeList);
+			freeList=next;
+			
+		}
+		return -1;
 	}
 	
 	public int allocateSegmentation(int bytes, int pid, int text_size, int data_size, int heap_size){
@@ -124,9 +133,10 @@ public class MemoryManager {
 			int size = current.getEnd() - current.getStart();
 			if( size >=bytes){
 				if(size >bytes+16){
-					//
+					//TODO
 					//cut memory save some free
 				}else{
+					//TODO
 					//move to taken stack
 					
 				}
@@ -155,7 +165,6 @@ public class MemoryManager {
 				next.resetId();
 				//call addNodeToFre to handle check to see if anything in free shares a border with next
 				addNodeToFree(next);
-				//TODO do removal, return 1
 				//if it does exist remove it from the taken list, add that amount to the free list
 				//in adding if it links (aka shares a boundry with any other memoryObject, add them together. 
 				//create a single mem O (aka change the range of one)
@@ -176,7 +185,18 @@ public class MemoryManager {
 		
 		return -1;
 	}
-	
+	public void addNodeToTaken(MemoryObject o){
+		MemoryObject current = takenList;
+		if(current ==null){
+			current=o;
+		}else{
+			//unless this needs to be sorted? this should work
+			current.setPrevious(o);
+			o.setFollowing(current);
+			takenList = o;
+			takenList.setPrevious(null);
+		}
+	}
 	public void addNodeToFree(MemoryObject o){
 		int start = o.getStart();
 		int end = o.getEnd();
@@ -205,7 +225,6 @@ public class MemoryManager {
 	
 	// maybe this could become a memory Object function?
 	public void tryCombineNodes(MemoryObject one, MemoryObject two){
-		//TODO the combination
 		int oneStart = one.getStart();
 		int twoStart = two.getStart();
 		int oneEnd = one.getEnd();
