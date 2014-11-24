@@ -1,5 +1,9 @@
-import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Scanner;
 
 /**
  * 
@@ -8,7 +12,7 @@ import java.util.HashMap;
  */
 //Based on assumption that processes do not grow or shrink, 
 //no compaction is performed by the memory manager, 
-//and the paging scheme assumes that all of processÕs 
+//and the paging scheme assumes that all of process's 
 //pages are resident in the main memory.
 
 //Write a segmentation based allocator which allocates three segments 
@@ -42,11 +46,11 @@ public class MemoryManager {
 		// Use segmentation if policy==0, paging if policy==1 }
 		if(policy == 1){
 			paging = true;
-			System.out.println("we are using paging");
+			System.out.println("We are using paging...");
 			//create the pages
 			pagingSetup();
 		}else{
-			System.out.println("We are using segmentation");
+			System.out.println("We are using segmentation...");
 			freeList = new MemoryObject(0,totalMemory,totalMemory,-99);
 			holeCount++;
 		}
@@ -261,63 +265,125 @@ public class MemoryManager {
 		// the output will depend on the memory allocator being used.
 		// SEGMENTATION Example:
 		// Memory size = 1024 bytes, allocated bytes = 179, free = 845
-		System.out.println("The Memory size is: " + totalMemory + "The allocated bytes: " +
-				(totalMemory - freeMemory) + "Free memory is: " + freeMemory);
-		MemoryObject f = freeList;
-		MemoryObject t = takenList;
+		//System.out.println("The Memory size is: " + totalMemory + "The allocated bytes: " +
+		//		(totalMemory - freeMemory) + "Free memory is: " + freeMemory);
+		//MemoryObject f = freeList;
+		//MemoryObject t = takenList;
+		// PAGING
 		if(paging){
-			System.out.println("Memory size: " + totalMemory + " there are " +totalMemory/pageSize + "pages");
-		}else{
-			System.out.println("Memory size: " + totalMemory);
-			System.out.println("There are " + processCount + " processes and " + holeCount + "holes");
+			System.out.println("Memory size = " + totalMemory + ", total pages = " + totalMemory/pageSize);
+			System.out.println("Allocated pages = " +  (totalMemory - freeMemory)/pageSize + ", free pages = " + freeMemory/pageSize);
+			System.out.println("There are currently " + processCount + " active processes");
+			System.out.println("Free page list: ");
+			// Free Page list:
+			String freePages = "";
+			MemoryObject o = freeList;
+			while (o != null){
+				freePages += o.getID() + ", ";
+				o = o.getFollowing();
+			}
+			System.out.println(freePages);
+			// 2,6,7,8,9,10,11,12...
+			// Process list:
+			// Process id=34, size=95 bytes, number of pages=3
+			// Virt Page 0 -> Phys Page 0 used: 32 bytes
+			// Virt Page 1 -> Phys Page 3 used: 32 bytes
+			// Virt Page 2 -> Phys Page 4 used: 31 bytes
+			// Process id=39, size=55 bytes, number of pages=2
+			// Virt Page 0 -> Phys Page 1 used: 32 bytes
+			// Virt Page 1 -> Phys Page 13 used: 23 bytes
+			// Process id=46, size=29 bytes, number of pages=1
+			// Virt Page 0 -> Phys Page 5 used: 29 bytes //
+			// Total Internal Fragmentation = 13 bytes
+			// Failed allocations (No memory) = 2
+			// Failed allocations (External Fragmentation) = 0 //
 		}
-		System.out.println("There have been " +failed +" failed additions");
-		if(paging){
-			//TODO print pages
-		}else{
-			//TODO print segmentation
+		// SEGMENTATION
+		else{
+			System.out.println("Memory size = " + totalMemory + ", allocated bytes = " + (totalMemory - freeMemory) + ", free = " + freeMemory);
+			System.out.println("There are currently" + holeCount + " holes and " + processCount + " active processes");
+			System.out.println("Hole list:");
+			// hole 1: start location = 0, size = 202
+			// ...
+			System.out.println("Process list:");
+			// process id=34, size=95 allocation=95
+			// text start=202, size=25
+			// data start=356, size=16
+			// heap start=587, size=54
+			// process id=39, size=55 allocation=65
+			// ...
+			// Total Internal Fragmentation = 10 bytes
+			System.out.println("Failed allocations = " + failed);
+			// Failed allocations (No memory) = 2
+			// Failed allocations (External Fragmentation) = 7
+		}
+	}
+	
+	public static void main(String[] args) throws IOException {
+		// Take in a text file as a command line argument
+		File file = null;
+		if (0 < args.length) {
+			String filename = args[0];
+			file = new File(filename);
+			}
+		else {
+				System.out.println("Invalid arguments count: " + args.length);
+				System.exit(0);
+				}
+		
+		// Read the text file and create jobs
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		
+		// Read in the first line (memory size and policy)
+		String line = reader.readLine();
+		String[] initialize = line.split(" ");
+		if(initialize.length > 2){
+			System.out.println("Invalid input file format: More than 2 entries on the first line (" + initialize.length + ")");
+			System.exit(0);
+		}
+		int memory = Integer.parseInt(initialize[0]);
+		int temp = Integer.parseInt(initialize[1]);
+		int policy = -1;
+		if (temp == 1 || temp == 2){
+			policy =  temp;
+		}
+		else{
+			System.out.println("Invalid input file format: Policy can only be 1 or 2, but was: " + temp + ".");
+			System.exit(0);
 		}
 		
-		//		allocate this many bytes to the process with
-		//      this id assume that each pid is unique to a process
-		//		if using the Segmentation allocator: text_size, data_size, and heap_size are the size of each segment. Verify that:
-		//		text_size + data_size + heap_size = bytes
-		//		if using the paging allocator, simply ignore the segment size variables return 1 if successful
-		//		return -1 if unsuccessful; print an error indicating
-		//whether there wasn't sufficient memory or whether you ran into external fragmentation
-		// There are currently 10 holes and 3 active process
-		// Hole list:
-		// hole 1: start location = 0, size = 202
-		// ...
-		// Process list:
-		// process id=34, size=95 allocation=95
-		// text start=202, size=25
-		// data start=356, size=16
-		// heap start=587, size=54
-		// process id=39, size=55 allocation=65
-		// ...
-		// Total Internal Fragmentation = 10 bytes
-		// Failed allocations (No memory) = 2
-		// Failed allocations (External Fragmentation) = 7 //
-		// PAGING Example:
-		// Memory size = 1024 bytes, total pages = 32
-		// allocated pages = 6, free pages = 26
-		// There are currently 3 active process
-		// Free Page list:
-		// 2,6,7,8,9,10,11,12...
-		// Process list:
-		// Process id=34, size=95 bytes, number of pages=3
-		// Virt Page 0 -> Phys Page 0 used: 32 bytes
-		// Virt Page 1 -> Phys Page 3 used: 32 bytes
-		// Virt Page 2 -> Phys Page 4 used: 31 bytes
-		// Process id=39, size=55 bytes, number of pages=2
-		// Virt Page 0 -> Phys Page 1 used: 32 bytes
-		// Virt Page 1 -> Phys Page 13 used: 23 bytes
-		// Process id=46, size=29 bytes, number of pages=1
-		// Virt Page 0 -> Phys Page 5 used: 29 bytes //
-		// Total Internal Fragmentation = 13 bytes
-		// Failed allocations (No memory) = 2
-		// Failed allocations (External Fragmentation) = 0 //
+		// New instance of the MemoryManager
+		MemoryManager mm = new MemoryManager(memory, policy);
+		
+		// Read the rest of the file
+		while ((line = reader.readLine()) != null) {
+			Scanner s = new Scanner(line);
+			s.useDelimiter(" ");
+			
+			// Action
+			String action = s.next();
+			if(action.equals("P")){
+				mm.printMemoryState();
+			}
+			else if(action.equals("D")){
+				int pid = s.nextInt();
+				mm.deallocate(pid);
+			}
+			else if(action.equalsIgnoreCase("A")){
+				int size = s.nextInt();
+				int pid = s.nextInt();
+				int text = s.nextInt();
+				int data = s.nextInt();
+				int heap = s.nextInt();
+				mm.allocate(size, pid, text, data, heap);
+			}
+			else{
+				System.out.println("Invalid input file format: Action can only be A, D or P, but was: " + action + ".");
+				System.exit(0);
+			}
+		}
+		reader.close();
 	}
+	
 }
 
