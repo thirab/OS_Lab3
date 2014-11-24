@@ -1,17 +1,17 @@
 
 public class MemoryObject {
-
+	int pid;
 	int start;
 	int end;
 	int memoryUsed;
-	int pid;
+	
 	MemoryObject previous = null;
 	MemoryObject following = null;
 	public MemoryObject(int s, int e, int mem, int id){
 		start= s;
 		end= e;
 		memoryUsed= mem;
-		pid=id;
+		pid = id;
 	}
 	public void setStart(int i){
 		start = i;
