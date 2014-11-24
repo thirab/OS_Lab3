@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
  * 
  * @author tai-lanhirabayashi
@@ -19,30 +22,202 @@
 //This will cause some internal fragmentation but prevents the memory allocator 
 //from having to track very small holes. 
 public class MemoryManager {
+	boolean paging = false;
+	int totalMemory;
+	int freeMemory;
+	int processCount =0;
+	int holeCount =0;
+	int pageSize = 32;
+	int failed = 0;
+	MemoryObject freeList = null;
+	MemoryObject takenList = null;
+	//use a map to track pid to location in arrayList
+	HashMap pidToLocation = new HashMap();
 
 	public MemoryManager(int bytes, int policy) {
-		// intialize memory with these many bytes.
-	}
+		if(bytes<0){
+			 // this is impossible
+			System.out.println("Error you must set memory");
+		}
 		// Use segmentation if policy==0, paging if policy==1 }
-		public int allocate(int bytes, int pid, int text_size, int data_size, int heap_size)
-		{
-			return 0;
+		if(policy == 1){
+			paging = true;
+			System.out.println("we are using paging");
+			//TODO create pages
+			pagingSetup();
+		}else{
+			System.out.println("We are using segmentation");
+			freeList = new MemoryObject(0,totalMemory,totalMemory,-99);
+			holeCount++;
 		}
-		public int deallocate(int pid)
-		{ //deallocate memory allocated to this process
+		// intialize memory with these many bytes.
+		totalMemory=bytes;
+		freeMemory=bytes;
+
+	}
+	
+	public void pagingSetup(){
+		int numPages = totalMemory / pageSize;
+		for(int i =0; i<numPages ;i++){
+			//create the pages
+			addPageToEnd(freeList);
+		}
+		//free pages have been created 
+	}
+	
+	/**
+	 * addPageToEnd adds an additional page
+	 * 
+	 * @param start
+	 */
+	public void addPageToEnd(MemoryObject start){
+		if(start ==null){
+			start = new MemoryObject(0,0+pageSize,pageSize,-99 );
+			return;
+		}
+		MemoryObject s = start;
+		while(s.getFollowing()!=null){
+			s=s.getFollowing();
+		}
+		int place = s.getEnd();
+		MemoryObject next = new MemoryObject(place,place+pageSize,pageSize,-99);
+		holeCount++;
+		s.setFollowing(next);
+	}
+	
+	public int allocate(int bytes, int pid, int text_size, int data_size, int heap_size)
+	{
+		if(totalMemory >= (freeMemory + bytes)){
+			//there is enough room
+			if(paging){
+				return allocatePaging(bytes, pid);
+			}
+			return allocateSegmentation(bytes, pid, text_size, data_size, heap_size);
+		}else{
+			//there is not enough room in memory
+		}
+		
+		return 0;
+	}
+	
+	public int allocatePaging(int bytes, int pid){
+		
+		return 0;
+	}
+	
+	public int allocateSegmentation(int bytes, int pid, int text_size, int data_size, int heap_size){
+		if(bytes != (text_size+data_size+heap_size)){
+			//there is something wrong
+			//error 
+			return -1;
+		}
+		
+		
+		return 0;
+	}
+	public int deallocate(int pid)
+	{ //deallocate memory allocated to this process
+		
+		//Find if this ID is in the taken memory list (does it exist)
+		MemoryObject next = takenList;
+		boolean removed = false;
+		
+		while(next!=null){
+			if(next.getID() == pid){
+				MemoryObject previous = next.getPrevious();
+				MemoryObject following = next.getFollowing();
+				previous.setFollowing(following);
+				following.setPrevious(previous);
+				
+				
+				next.resetId();
+				//call addNodeToFre to handle check to see if anything in free shares a border with next
+				addNodeToFree(next);
+				//TODO do removal, return 1
+				//if it does exist remove it from the taken list, add that amount to the free list
+				//in adding if it links (aka shares a boundry with any other memoryObject, add them together. 
+				//create a single mem O (aka change the range of one)
+				following = next;
+				removed=true;
+				if(!paging){
+					
+					return 1;
+				}
+			}
+			next=next.getFollowing();
+		}
+		if(removed){
+			return 1;
+		}
 		// return 1 if successful, -1 otherwise with an error message 
-			return 0;
+		
+		
+		return -1;
+	}
+	
+	public void addNodeToFree(MemoryObject o){
+		int start = o.getStart();
+		int end = o.getEnd();
+		MemoryObject current = freeList;
+		
+		
+		if(current == null){
+			current = o;
+			current.resetId();
 		}
-		public void printMemoryState()
-		{ // print out current state of memory
+		MemoryObject next = current.getFollowing();
+		if(next == null){
+			o.resetId();
+			current.setFollowing(o);
+		}
+		while(next.getFollowing()!=null){
+			next=next.getFollowing();
+		}
+		o.resetId();
+		next.setFollowing(o);
+		
+		//check to see if anything in free shares a border with next
+	}
+	
+	public void combineNodes(MemoryObject one, MemoryObject two){
+		//TODO the combination
+		int oneStart = one.getStart();
+		int twoStart = two.getStart();
+		if(oneStart >twoStart){
+			
+		}else{
+			
+		}
+	}
+	
+	public void printMemoryState()
+	{ // print out current state of memory
 		// the output will depend on the memory allocator being used.
 		// SEGMENTATION Example:
 		// Memory size = 1024 bytes, allocated bytes = 179, free = 845
-//		allocate this many bytes to the process with this id assume that each pid is unique to a process
-//		if using the Segmentation allocator: text_size, data_size, and heap_size are the size of each segment. Verify that:
-//		text_size + data_size + heap_size = bytes
-//		if using the paging allocator, simply ignore the segment size variables return 1 if successful
-//		return -1 if unsuccessful; print an error indicating
+		System.out.println("The Memory size is: " + totalMemory + "The allocated bytes: " +
+				(totalMemory - freeMemory) + "Free memory is: " + freeMemory);
+		MemoryObject f = freeList;
+		MemoryObject t = takenList;
+		if(paging){
+			System.out.println("Memory size: " + totalMemory + " there are " +totalMemory/pageSize + "pages");
+		}else{
+			System.out.println("Memory size: " + totalMemory);
+			System.out.println("There are " + processCount + " processes and " + holeCount + "holes");
+		}
+		System.out.println("There have been " +failed +" failed additions");
+		if(paging){
+			//TODO print pages
+		}else{
+			//TODO print segmentation
+		}
+		
+		//		allocate this many bytes to the process with
+		//      this id assume that each pid is unique to a process
+		//		if using the Segmentation allocator: text_size, data_size, and heap_size are the size of each segment. Verify that:
+		//		text_size + data_size + heap_size = bytes
+		//		if using the paging allocator, simply ignore the segment size variables return 1 if successful
+		//		return -1 if unsuccessful; print an error indicating
 		//whether there wasn't sufficient memory or whether you ran into external fragmentation
 		// There are currently 10 holes and 3 active process
 		// Hole list:
@@ -77,6 +252,6 @@ public class MemoryManager {
 		// Total Internal Fragmentation = 13 bytes
 		// Failed allocations (No memory) = 2
 		// Failed allocations (External Fragmentation) = 0 //
-		}
+	}
 }
 
