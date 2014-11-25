@@ -1,17 +1,27 @@
+/**
+ * Represents a process stored in memory
+ */
 public class Process {
+	// Process id
 	int pid;
+	
+	// Process size
 	int size;
+	
+	// Policy (0=>segmentation or 1=>paging)
 	int policy = MemoryManager.policy;
 
+	// Fragments
 	int text_address, text_size;
 	int data_address, data_size;
 	int heap_address, heap_size;
 	
+	// Paging
 	int PAGE_SIZE = MemoryManager.PAGE_SIZE;
 	int[] pages;
 	
 	/**
-	 * Initialize process for paging
+	 * Initializes process and setup for paging
 	 * @param pid process id
 	 * @param size number of bytes to be allocated to this process
 	 **/
@@ -22,13 +32,12 @@ public class Process {
 		// Initialize an array of pages
 		if (policy == 1){
 				int pagesNeeded = size/PAGE_SIZE;
-				pages= new int[pagesNeeded];
+				pages = new int[pagesNeeded];
 		}
 	}
 	
 	/**
-	 * Calculate internal fragmentation of the process.
-	 * 
+	 * Calculates internal fragmentation of the process
 	 * @return the number of bytes that represent internal fragmentation
 	 **/
 	public int getInternalFragmentation(){
@@ -36,31 +45,33 @@ public class Process {
 		
 		// Segmentation
 		if(policy == 0){
-			fragmentation = (text_size + data_size + heap_size)-size;
+			fragmentation = (text_size + data_size + heap_size) - size;
 		}
 		
 		// Paging
-		if (policy == 1){
+		else if (policy == 1){
 			fragmentation = size % PAGE_SIZE;
 		}
+		
 		return fragmentation;
 	}
 	
 	/**
-	* Print information about this process
+	* Prints information about this process
 	**/
 	public void printProcessInformation(){
-		System.out.println("Process id = " + pid + ", size = " + size + " bytes,");
+		System.out.print("process id = " + pid + ", size = " + size + " bytes, ");
 		
 		// Segmentation
 		if (policy == 0){
 			int allocation = text_size + data_size + heap_size;
-			System.out.println("allocation = " + allocation + "bytes");
-			System.out.println("text start = " + text_address + ", size = " + text_size);
-			System.out.println("data start = " + data_address + ", size = " + data_size);
-			System.out.println("heap start = " + heap_address + ", size = " + heap_size);
+			System.out.println("allocation = " + allocation + " bytes");
+			System.out.println("\ttext start = " + text_address + ", size = " + text_size + " bytes");
+			System.out.println("\tdata start = " + data_address + ", size = " + data_size + " bytes");
+			System.out.println("\theap start = " + heap_address + ", size = " + heap_size + " bytes");
 		}
 		
+		// Paging
 		else if(policy == 1){
 			System.out.println("number of pages = " + pages.length);
 			
@@ -72,7 +83,7 @@ public class Process {
 						bytesUsed=PAGE_SIZE;
 					}
 				}
-				System.out.println("Virt page " + i + "-> Phys page " + pages[i] + " used: " + bytesUsed + "bytes");
+				System.out.println("\tvirt page " + i + " -> phys page " + pages[i] + " used: " + bytesUsed + " bytes");
 			}
 		}
 	}

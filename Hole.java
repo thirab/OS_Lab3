@@ -1,7 +1,4 @@
-
 /**
- * @author Pavlina Lejskova
- *
  * Represents a hole in memory.
  */
 public class Hole implements Comparable{
@@ -9,8 +6,7 @@ public class Hole implements Comparable{
 	int size;
 	
 	/**
-	 * Initialize a hole.
-	 * 
+	 * Initializes a hole
 	 * @param address the address of the hole
 	 * @param size the size of the hole
 	 */
@@ -21,7 +17,7 @@ public class Hole implements Comparable{
 
 	
 	/*
-	 * Order holes by address
+	 * Orders holes by address
 	 */
 	public int compareTo(Object o) {
 		return address - ((Hole)o).address;
